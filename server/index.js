@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const loanRoutes = require('./routes/loanRoutes');
+const authRoutes = require('./routes/authRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -18,9 +19,8 @@ app.use(
 app.use(express.json());
 
 // --- Routes ---
-const authRoutes = require('./routes/authRoutes');
-app.use('/api/auth', authRoutes);
 app.use('/api', loanRoutes);
+app.use('/api/auth', authRoutes);
 
 // Health check
 app.get('/api/health', (_req, res) => {

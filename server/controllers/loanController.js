@@ -110,4 +110,21 @@ const updateStatus = async (req, res) => {
   }
 };
 
-module.exports = { analyzeLoanHandler, updateStatus };
+/**
+ * GET /api/applications
+ * Fetch all loan applications
+ */
+const getApplications = async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ applications: [] });
+    }
+    const applications = await LoanApplication.find().sort({ createdAt: -1 });
+    return res.json({ applications });
+  } catch (error) {
+    console.error('Fetch applications error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+module.exports = { analyzeLoanHandler, updateStatus, getApplications };
