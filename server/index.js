@@ -11,8 +11,14 @@ const PORT = process.env.PORT || 5000;
 // --- Middleware ---
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'https://ai-loan-predict-system.vercel.app/',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    origin: [
+      process.env.FRONTEND_URL,
+      'https://ai-loan-predict-system.vercel.app',
+      'https://ai-loan-predict-system.vercel.app/',
+      'http://localhost:5173',
+      'http://localhost:3000'
+    ].filter(Boolean),
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     credentials: true,
   })
 );
