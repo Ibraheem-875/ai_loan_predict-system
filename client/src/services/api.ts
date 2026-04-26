@@ -2,7 +2,7 @@ import axios from 'axios';
 
 /** Axios instance with base URL pointing to our Express backend */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ai-loan-predict-system.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 10000,
 });
