@@ -4,7 +4,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ai-loan-predict-system.onrender.com/api',
   headers: { 'Content-Type': 'application/json' },
-  timeout: 10000,
+  timeout: 45000, // 45 seconds to accommodate Gemini API latency (was 10 seconds)
 });
 
 const TOKEN_KEY = 'fincore_auth_token';
