@@ -3,7 +3,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 /**
  * AI Service for generating loan insights using Google Gemini API.
  */
-const AI_TIMEOUT_MS = 12000;
+const AI_TIMEOUT_MS = 30000;
 
 const withTimeout = (promise, timeoutMs) =>
   Promise.race([

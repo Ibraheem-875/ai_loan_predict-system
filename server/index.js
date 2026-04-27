@@ -34,6 +34,13 @@ app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 app.use(express.json());
 
+// Request timeout middleware (40 seconds for API responses)
+app.use((req, res, next) => {
+  req.setTimeout(40000);
+  res.setTimeout(40000);
+  next();
+});
+
 // --- Routes ---
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
