@@ -55,7 +55,9 @@ export default function AnalyzePage() {
     if (input && result) generatePDFReport(input, result);
   };
 
-  const handleApply = () => setApplied(true);
+  const handleApply = () => {
+    window.location.href = 'https://www.google.com/search?q=loan';
+  };
 
   return (
     <motion.div 

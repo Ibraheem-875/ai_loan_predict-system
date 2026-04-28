@@ -31,6 +31,12 @@ export interface RegisterPayload extends AuthPayload {
 
 export interface LoanApplicationRecord extends LoanResult {
   _id: string;
+  income: number;
+  creditScore: number;
+  existingEMI: number;
+  loanAmount: number;
+  tenure: number;
+  employment: 'stable' | 'unstable';
   status: 'Applied' | 'Under Review' | 'Approved' | 'Rejected';
   createdAt: string;
 }
