@@ -1,9 +1,9 @@
 import axios from 'axios';
 
 /** Axios instance with base URL pointing to our Express backend */
-const BACKEND_URL = import.meta.env.DEV
-  ? '/api'  // local dev → Vite proxy handles /api → localhost:5001
-  : 'https://ai-loan-predict-system.onrender.com/api'; // production → direct to Render
+// In local dev: VITE_API_BASE_URL=/api (uses Vite proxy to localhost:5001)
+// In production: hardcoded to Render backend
+const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'https://ai-loan-predict-system.onrender.com/api';
 
 const api = axios.create({
   baseURL: BACKEND_URL,
