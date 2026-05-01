@@ -4,7 +4,7 @@
   "description": "AI Powered Loan Decision System - Backend",
   "main": "server/index.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "cd server && node index.js",
     "dev": "cd server && node --watch index.js"
   },
   "engines": {
