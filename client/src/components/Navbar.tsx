@@ -3,11 +3,13 @@ import { Sun, Moon, Shield, Home, Activity, Clock, LogIn, LogOut, LayoutDashboar
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useAdminAuth } from '../context/AdminAuthContext';
 
 export default function Navbar() {
   const [isDark, setIsDark] = useState(true);
   const location = useLocation();
   const { isAuthenticated, logout, user } = useAuth();
+  const { isAdminAuthenticated, logoutAdmin, admin } = useAdminAuth();
 
   const toggleTheme = () => {
     setIsDark(!isDark);
@@ -16,11 +18,11 @@ export default function Navbar() {
 
   const navLinks = [
     { name: 'Home', path: '/', icon: <Home size={16} /> },
+    { name: 'Admin', path: '/admin', icon: <LayoutDashboard size={16} /> },
     ...(isAuthenticated
       ? [
           { name: 'Analyze', path: '/analyze', icon: <Activity size={16} /> },
           { name: 'History', path: '/history', icon: <Clock size={16} /> },
-          { name: 'Admin', path: '/admin', icon: <LayoutDashboard size={16} /> },
         ]
       : []),
   ];
@@ -103,6 +105,25 @@ export default function Navbar() {
           >
             <LogOut size={16} /> {user?.name ? `Logout (${user.name.split(' ')[0]})` : 'Logout'}
           </button>
+        )}
+
+        {isAdminAuthenticated ? (
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={logoutAdmin}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px' }}
+          >
+            <LogOut size={16} /> {admin?.name ? `Admin Logout (${admin.name.split(' ')[0]})` : 'Admin Logout'}
+          </button>
+        ) : (
+          <Link
+            to="/admin/auth"
+            className="btn-secondary"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', padding: '10px 14px' }}
+          >
+            <LogIn size={16} /> Admin Sign In
+          </Link>
         )}
 
         <button

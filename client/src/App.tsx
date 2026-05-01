@@ -5,7 +5,9 @@ import AnalyzePage from './pages/AnalyzePage';
 import HistoryPage from './pages/HistoryPage';
 import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
+import AdminAuthPage from './pages/AdminAuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
 import { AnimatePresence } from 'framer-motion';
 
 export default function App() {
@@ -19,6 +21,7 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/admin/auth" element={<AdminAuthPage />} />
               <Route
                 path="/analyze"
                 element={(
@@ -38,9 +41,9 @@ export default function App() {
               <Route
                 path="/admin"
                 element={(
-                  <ProtectedRoute>
+                  <AdminProtectedRoute>
                     <AdminPage />
-                  </ProtectedRoute>
+                  </AdminProtectedRoute>
                 )}
               />
             </Routes>

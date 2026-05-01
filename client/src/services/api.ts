@@ -2,12 +2,13 @@ import axios from 'axios';
 
 /** Axios instance with base URL pointing to our Express backend */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'https://ai-loan-predict-system.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
   timeout: 45000, // 45 seconds to accommodate Gemini API latency (was 10 seconds)
 });
 
 const TOKEN_KEY = 'fincore_auth_token';
+const ADMIN_TOKEN_KEY = 'fincore_admin_auth_token';
 
 export interface AuthUser {
   id: string;
@@ -18,6 +19,11 @@ export interface AuthUser {
 export interface AuthResponse {
   token: string;
   user: AuthUser;
+}
+
+export interface AdminAuthResponse {
+  token: string;
+  admin: AuthUser;
 }
 
 export interface AuthPayload {
@@ -46,11 +52,32 @@ export interface LoanApplicationRecord extends LoanResult {
 export const getStoredToken = () => localStorage.getItem(TOKEN_KEY);
 export const setStoredToken = (token: string) => localStorage.setItem(TOKEN_KEY, token);
 export const clearStoredToken = () => localStorage.removeItem(TOKEN_KEY);
+export const getStoredAdminToken = () => localStorage.getItem(ADMIN_TOKEN_KEY);
+export const setStoredAdminToken = (token: string) => localStorage.setItem(ADMIN_TOKEN_KEY, token);
+export const clearStoredAdminToken = () => localStorage.removeItem(ADMIN_TOKEN_KEY);
 
 api.interceptors.request.use((config) => {
-  const token = getStoredToken();
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const requestUrl = config.url ?? '';
+
+  if (config.headers.Authorization) {
+    return config;
+  }
+
+  if (requestUrl.startsWith('/admin/auth')) {
+    return config;
+  }
+
+  if (requestUrl.startsWith('/admin/')) {
+    const adminToken = getStoredAdminToken();
+    if (adminToken) {
+      config.headers.Authorization = `Bearer ${adminToken}`;
+    }
+    return config;
+  }
+
+  const userToken = getStoredToken();
+  if (userToken) {
+    config.headers.Authorization = `Bearer ${userToken}`;
   }
   return config;
 });
@@ -62,6 +89,8 @@ export interface UploadedDocument {
   fileName: string;
   fileType: string;
   fileSize: number;
+  url?: string;
+  publicId?: string;
 }
 
 export interface DocumentVerification {
@@ -69,6 +98,43 @@ export interface DocumentVerification {
   pan?: UploadedDocument;
   salarySlip?: UploadedDocument;
 }
+
+export interface CloudinaryUploadResponse {
+  url: string;
+  publicId: string;
+  docType: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+}
+
+/**
+ * POST /api/upload-document
+ * Upload a document file to Cloudinary via the backend.
+ */
+export const uploadDocumentToCloud = async (
+  file: File,
+  docType: 'aadhaar' | 'pan' | 'salarySlip'
+): Promise<CloudinaryUploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('docType', docType);
+
+  const response = await api.post<CloudinaryUploadResponse>('/upload-document', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 60000,
+  });
+  return response.data;
+};
+
+/**
+ * DELETE /api/delete-document
+ * Remove a document from Cloudinary by its publicId.
+ */
+export const deleteDocumentFromCloud = async (publicId: string): Promise<void> => {
+  await api.delete('/delete-document', { data: { publicId } });
+};
+
 
 /** Shape of the loan analysis request body */
 export interface LoanInput {
@@ -129,6 +195,21 @@ export const loginUser = async (data: AuthPayload): Promise<AuthResponse> => {
 
 export const fetchMe = async (): Promise<{ user: AuthUser }> => {
   const response = await api.get<{ user: AuthUser }>('/auth/me');
+  return response.data;
+};
+
+export const registerAdmin = async (data: RegisterPayload): Promise<AdminAuthResponse> => {
+  const response = await api.post<AdminAuthResponse>('/admin/auth/register', data);
+  return response.data;
+};
+
+export const loginAdmin = async (data: AuthPayload): Promise<AdminAuthResponse> => {
+  const response = await api.post<AdminAuthResponse>('/admin/auth/login', data);
+  return response.data;
+};
+
+export const fetchAdminMe = async (): Promise<{ admin: AuthUser }> => {
+  const response = await api.get<{ admin: AuthUser }>('/admin/auth/me');
   return response.data;
 };
 
