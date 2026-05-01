@@ -145,6 +145,26 @@ export default function HistoryPage() {
               <DataPoint label="Probability" value={`${application.probability}%`} />
               <DataPoint label="EMI" value={`₹${application.emi.toLocaleString('en-IN')}`} />
             </div>
+
+            {/* Document Links */}
+            {application.documentVerification && Object.values(application.documentVerification).some(d => d?.uploaded) && (
+              <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: '1px solid rgba(148,163,184,0.08)', paddingTop: 14 }}>
+                {(['aadhaar', 'pan', 'salarySlip'] as const).map(dk => {
+                  const d = application.documentVerification?.[dk];
+                  if (!d?.uploaded) return null;
+                  return (
+                    <div key={dk} style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-green)' }}>
+                      <span style={{ textTransform: 'capitalize', fontWeight: 700 }}>{dk}</span>
+                      {d.url && (
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: 2, textDecoration: 'none' }}>
+                           • View ↗
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ))}
       </div>

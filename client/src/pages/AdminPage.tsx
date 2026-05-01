@@ -183,9 +183,10 @@ export default function AdminPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                    {['ID', 'Purpose', 'Amount', 'Score', 'Docs', 'Status', 'Date'].map(h => (
+                    {['ID', 'Purpose', 'Amount', 'Score', 'Status', 'Date'].map(h => (
                       <th key={h} style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                     ))}
+                    <th style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Documents</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -209,6 +210,27 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{new Date(app.createdAt).toLocaleDateString()}</td>
+                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
+                          {(['aadhaar', 'pan', 'salarySlip'] as const).map(dk => {
+                            const d = app.documentVerification?.[dk];
+                            if (!d?.uploaded) return null;
+                            return (
+                              <a key={dk} href={d.url} target="_blank" rel="noopener noreferrer" 
+                                 title={`View ${dk}`}
+                                 style={{ 
+                                   width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                   background: 'rgba(59,130,246,0.1)', color: 'var(--accent-blue)', border: '1px solid rgba(59,130,246,0.2)' 
+                                 }}>
+                                <Eye size={12} />
+                              </a>
+                            );
+                          })}
+                          {(!app.documentVerification || !Object.values(app.documentVerification).some(d => d?.uploaded)) && (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>None</span>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
