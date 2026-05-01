@@ -1,50 +1,60 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, LogIn, UserPlus } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { AlertTriangle, Clock3, RefreshCw } from 'lucide-react';
+import { fetchApplications, type LoanApplicationRecord } from '../services/api';
+import { useLocation } from 'react-router-dom';
 
-type Mode = 'login' | 'register';
+type HistoryLocationState = {
+  highlightId?: string;
+};
 
-export default function AuthPage() {
-  const { login, register, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
+const statusColor: Record<LoanApplicationRecord['status'], string> = {
+  Applied: '#3b82f6',
+  'Under Review': '#f59e0b',
+  Approved: '#10b981',
+  Rejected: '#ef4444',
+};
+
+export default function HistoryPage() {
   const location = useLocation();
-  const [mode, setMode] = useState<Mode>('login');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const redirectPath = useMemo(() => {
-    const from = location.state as { from?: string } | null;
-    return from?.from || '/analyze';
-  }, [location.state]);
+  const highlightedId = (location.state as HistoryLocationState | null)?.highlightId;
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/analyze', { replace: true });
-    }
-  }, [isAuthenticated, navigate]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const loadApplications = async () => {
     setError(null);
     setLoading(true);
     try {
-      if (mode === 'register') {
-        await register({ name: name.trim(), email: email.trim(), password });
-      } else {
-        await login({ email: email.trim(), password });
-      }
-      navigate(redirectPath, { replace: true });
-    } catch (err: any) {
-      setError(err?.response?.data?.error || 'Authentication failed. Please try again.');
+      const response = await fetchApplications();
+      setApplications(response.applications);
+    } catch (err: unknown) {
+      const message =
+        typeof err === 'object' &&
+        err !== null &&
+        'response' in err &&
+        typeof (err as { response?: { data?: { error?: string } } }).response?.data?.error === 'string'
+          ? (err as { response?: { data?: { error?: string } } }).response?.data?.error
+          : 'Failed to load application history.';
+      setError(message || 'Failed to load application history.');
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    void loadApplications();
+  }, []);
+
+  const totals = useMemo(() => {
+    return {
+      all: applications.length,
+      approved: applications.filter((app) => app.status === 'Approved').length,
+      review: applications.filter((app) => app.status === 'Under Review').length,
+      rejected: applications.filter((app) => app.status === 'Rejected').length,
+    };
+  }, [applications]);
 
   return (
     <motion.div
@@ -52,87 +62,130 @@ export default function AuthPage() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       className="page-container"
-      style={{ justifyContent: 'center', alignItems: 'center' }}
+      style={{ display: 'flex', flexDirection: 'column', gap: 24 }}
     >
-      <div className="glass-card" style={{ width: '100%', maxWidth: 520, padding: 32 }}>
-        <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <h1 style={{ fontSize: '1.8rem', fontWeight: 900 }}>
-            {mode === 'login' ? 'Login to ' : 'Create '}<span className="gradient-text">FinCore AI</span>
-          </h1>
-          <p style={{ color: 'var(--text-muted)', marginTop: 8 }}>
-            {mode === 'login' ? 'Continue to analyze and track applications.' : 'Create your account to start loan analysis.'}
-          </p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-          <button
-            type="button"
-            className={mode === 'login' ? 'btn-primary' : 'btn-secondary'}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-            onClick={() => setMode('login')}
-          >
-            <LogIn size={16} /> Login
-          </button>
-          <button
-            type="button"
-            className={mode === 'register' ? 'btn-primary' : 'btn-secondary'}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-            onClick={() => setMode('register')}
-          >
-            <UserPlus size={16} /> Register
+      <div className="glass-card" style={{ padding: 24 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+          <div>
+            <h1 style={{ fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 900, marginBottom: 6 }}>
+              Loan <span className="gradient-text">History</span>
+            </h1>
+            <p style={{ color: 'var(--text-muted)' }}>
+              All submitted applications and their latest status.
+            </p>
+          </div>
+          <button className="btn-outline" onClick={() => void loadApplications()} disabled={loading}>
+            <RefreshCw size={16} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+            {loading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {mode === 'register' && (
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Full name"
-              required
-              style={inputStyle}
-            />
-          )}
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Email"
-            required
-            style={inputStyle}
-          />
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
-            required
-            minLength={6}
-            style={inputStyle}
-          />
+        <div style={{ marginTop: 20, display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
+          <StatCard label="Total" value={totals.all} />
+          <StatCard label="Approved" value={totals.approved} />
+          <StatCard label="Under Review" value={totals.review} />
+          <StatCard label="Rejected" value={totals.rejected} />
+        </div>
+      </div>
 
-          {error && (
-            <div className="glass-card" style={{ padding: 12, borderLeft: '3px solid var(--accent-red)', display: 'flex', gap: 8, alignItems: 'center' }}>
-              <AlertTriangle size={16} color="var(--accent-red)" />
-              <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{error}</span>
+      {error && (
+        <div className="glass-card" style={{ padding: 16, borderLeft: '4px solid var(--accent-red)', display: 'flex', gap: 10, alignItems: 'center' }}>
+          <AlertTriangle size={18} color="var(--accent-red)" />
+          <span style={{ color: 'var(--text-secondary)' }}>{error}</span>
+        </div>
+      )}
+
+      {!loading && applications.length === 0 && (
+        <div className="glass-card" style={{ padding: 28, textAlign: 'center' }}>
+          <Clock3 size={20} style={{ marginBottom: 10 }} />
+          <p style={{ color: 'var(--text-muted)' }}>No applications found yet. Submit one from Analyze page.</p>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        {applications.map((application) => (
+          <div
+            key={application._id}
+            className="glass-card"
+            style={{
+              padding: 20,
+              border: highlightedId === application._id ? '1px solid #3b82f6' : '1px solid var(--border-glass)',
+              boxShadow: highlightedId === application._id ? '0 0 0 2px rgba(59,130,246,0.2)' : undefined,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'center', marginBottom: 14 }}>
+              <p style={{ margin: 0, fontWeight: 700 }}>
+                Application #{application._id.slice(-6).toUpperCase()}
+              </p>
+              <span
+                style={{
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  color: statusColor[application.status],
+                  background: `${statusColor[application.status]}1A`,
+                  border: `1px solid ${statusColor[application.status]}44`,
+                  padding: '5px 10px',
+                  borderRadius: 999,
+                }}
+              >
+                {application.status}
+              </span>
             </div>
-          )}
 
-          <button disabled={loading} type="submit" className="btn-primary" style={{ marginTop: 8 }}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Login' : 'Create Account'}
-          </button>
-        </form>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
+              <DataPoint label="Created" value={new Date(application.createdAt).toLocaleString()} />
+              <DataPoint label="Loan Amount" value={`₹${application.loanAmount.toLocaleString('en-IN')}`} />
+              <DataPoint label="Purpose" value={application.purposeAnalysis?.type || application.loanPurpose} />
+              <DataPoint
+                label="Documents"
+                value={`${application.documentStatus?.uploadedCount ?? 0}/${application.documentStatus?.requiredCount ?? 3} uploaded`}
+              />
+              <DataPoint label="Income" value={`₹${application.income.toLocaleString('en-IN')}`} />
+              <DataPoint label="Credit Score" value={application.creditScore.toString()} />
+              <DataPoint label="Probability" value={`${application.probability}%`} />
+              <DataPoint label="EMI" value={`₹${application.emi.toLocaleString('en-IN')}`} />
+            </div>
+
+            {/* Document Links */}
+            {application.documentVerification && Object.values(application.documentVerification).some(d => d?.uploaded) && (
+              <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: '1px solid rgba(148,163,184,0.08)', paddingTop: 14 }}>
+                {(['aadhaar', 'pan', 'salarySlip'] as const).map(dk => {
+                  const d = application.documentVerification?.[dk];
+                  if (!d?.uploaded) return null;
+                  return (
+                    <div key={dk} style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-green)' }}>
+                      <span style={{ textTransform: 'capitalize', fontWeight: 700 }}>{dk}</span>
+                      {d.url && (
+                        <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: 2, textDecoration: 'none' }}>
+                           • View ↗
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
     </motion.div>
   );
 }
 
-const inputStyle: CSSProperties = {
-  width: '100%',
-  padding: '12px 14px',
-  borderRadius: 10,
-  border: '1px solid var(--border-glass)',
-  background: 'var(--bg-glass)',
-  color: 'var(--text-primary)',
-  outline: 'none',
-};
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="glass-card" style={{ padding: 14 }}>
+      <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.8rem' }}>{label}</p>
+      <p style={{ margin: '4px 0 0', fontWeight: 800, fontSize: '1.15rem' }}>{value}</p>
+    </div>
+  );
+}
+
+function DataPoint({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p style={{ color: 'var(--text-muted)', margin: 0, fontSize: '0.75rem' }}>{label}</p>
+      <p style={{ margin: '2px 0 0', fontWeight: 600 }}>{value}</p>
+    </div>
+  );
+}

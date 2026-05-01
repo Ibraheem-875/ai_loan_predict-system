@@ -3,6 +3,15 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 /**
  * AI Service for generating loan insights using Google Gemini API.
  */
+const AI_TIMEOUT_MS = 30000;
+
+const withTimeout = (promise, timeoutMs) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(`AI request timed out after ${timeoutMs}ms`)), timeoutMs);
+    }),
+  ]);
 
 const generateLoanInsights = async (userData) => {
   try {
@@ -49,12 +58,12 @@ Return ONLY valid JSON in this format:
 
     let result;
     try {
-      result = await model.generateContent(prompt);
+      result = await withTimeout(model.generateContent(prompt), AI_TIMEOUT_MS);
     } catch (apiError) {
       if (apiError.message.includes('503') || apiError.message.includes('500')) {
         console.log('⚠️ Gemini API 503 error, retrying in 2 seconds...');
         await new Promise(resolve => setTimeout(resolve, 2000));
-        result = await model.generateContent(prompt);
+        result = await withTimeout(model.generateContent(prompt), AI_TIMEOUT_MS);
       } else {
         throw apiError;
       }

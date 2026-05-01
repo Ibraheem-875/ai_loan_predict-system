@@ -13,6 +13,37 @@ const loanApplicationSchema = new mongoose.Schema(
     loanAmount: { type: Number, required: true },
     tenure: { type: Number, required: true }, // months
     employment: { type: String, enum: ['stable', 'unstable'], required: true },
+    loanPurpose: {
+      type: String,
+      enum: ['home', 'car', 'personal', 'education'],
+      default: 'personal',
+    },
+    documentVerification: {
+      aadhaar: {
+        uploaded: { type: Boolean, default: false },
+        fileName: String,
+        fileType: String,
+        fileSize: Number,
+        url: String,
+        publicId: String,
+      },
+      pan: {
+        uploaded: { type: Boolean, default: false },
+        fileName: String,
+        fileType: String,
+        fileSize: Number,
+        url: String,
+        publicId: String,
+      },
+      salarySlip: {
+        uploaded: { type: Boolean, default: false },
+        fileName: String,
+        fileType: String,
+        fileSize: Number,
+        url: String,
+        publicId: String,
+      },
+    },
 
     // --- Computed result fields ---
     eligible: { type: Boolean },
@@ -22,6 +53,20 @@ const loanApplicationSchema = new mongoose.Schema(
     emi: { type: Number },
     recommendedLoan: { type: Number },
     totalPayable: { type: Number },
+    interestRate: { type: Number },
+    documentStatus: {
+      uploadedCount: Number,
+      requiredCount: Number,
+      complete: Boolean,
+    },
+    purposeAnalysis: {
+      type: String,
+      minimumCreditScore: Number,
+      maxTenure: Number,
+      maxEmiRatio: Number,
+      note: String,
+      purposeEligible: Boolean,
+    },
     reasons: [String],
     suggestions: [String],
     

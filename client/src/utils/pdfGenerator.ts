@@ -102,6 +102,8 @@ export const generatePDFReport = (input: LoanInput, result: LoanResult): void =>
     ['Existing EMI', safeCurrency(input.existingEMI)],
     ['Requested Loan Amount', safeCurrency(input.loanAmount)],
     ['Tenure', `${input.tenure} months`],
+    ['Loan Purpose', result.purposeAnalysis?.type || input.loanPurpose],
+    ['Documents Uploaded', `${result.documentStatus?.uploadedCount ?? 0}/${result.documentStatus?.requiredCount ?? 3}`],
     ['Employment Type', input.employment.charAt(0).toUpperCase() + input.employment.slice(1)],
   ];
 

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ai-loan-predict-system
+    runtime: node
+    buildCommand: cd server && npm install
+    startCommand: cd server && node index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        value: https://ai-loan-predict-system.vercel.app

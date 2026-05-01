@@ -1,7 +1,26 @@
 const { analyzeLoan } = require('../services/loanService');
 const { generateLoanInsights } = require('../services/aiService');
 const LoanApplication = require('../models/LoanApplication');
+const User = require('../models/User');
 const mongoose = require('mongoose');
+
+const VALID_LOAN_PURPOSES = ['home', 'car', 'personal', 'education'];
+const VALID_DOCUMENT_KEYS = ['aadhaar', 'pan', 'salarySlip'];
+
+const sanitizeDocumentVerification = (documentVerification = {}) => {
+  return VALID_DOCUMENT_KEYS.reduce((acc, key) => {
+    const doc = documentVerification[key] || {};
+    acc[key] = {
+      uploaded: Boolean(doc.uploaded),
+      fileName: typeof doc.fileName === 'string' ? doc.fileName.slice(0, 180) : '',
+      fileType: typeof doc.fileType === 'string' ? doc.fileType.slice(0, 80) : '',
+      fileSize: typeof doc.fileSize === 'number' ? doc.fileSize : 0,
+      url: typeof doc.url === 'string' ? doc.url.slice(0, 500) : '',
+      publicId: typeof doc.publicId === 'string' ? doc.publicId.slice(0, 200) : '',
+    };
+    return acc;
+  }, {});
+};
 
 /**
  * POST /api/analyze-loan
@@ -10,10 +29,20 @@ const mongoose = require('mongoose');
  */
 const analyzeLoanHandler = async (req, res) => {
   try {
-    const { income, creditScore, existingEMI, loanAmount, tenure, employment } = req.body;
+    const {
+      income,
+      creditScore,
+      existingEMI,
+      loanAmount,
+      tenure,
+      employment,
+      loanPurpose = 'personal',
+      documentVerification,
+    } = req.body;
+    const sanitizedDocuments = sanitizeDocumentVerification(documentVerification);
 
     // --- Basic validation ---
-    if (!income || !creditScore || !loanAmount || !tenure || !employment) {
+    if (!income || !creditScore || !loanAmount || !tenure || !employment || !loanPurpose) {
       return res.status(400).json({ error: 'All fields are required.' });
     }
 
@@ -32,6 +61,9 @@ const analyzeLoanHandler = async (req, res) => {
     if (!['stable', 'unstable'].includes(employment)) {
       return res.status(400).json({ error: 'Employment must be "stable" or "unstable".' });
     }
+    if (!VALID_LOAN_PURPOSES.includes(loanPurpose)) {
+      return res.status(400).json({ error: 'Invalid loan purpose.' });
+    }
 
     // --- Run analysis ---
     const result = analyzeLoan({
@@ -41,6 +73,8 @@ const analyzeLoanHandler = async (req, res) => {
       loanAmount,
       tenure,
       employment,
+      loanPurpose,
+      documentVerification: sanitizedDocuments,
     });
 
     // --- Generate AI Insights ---
@@ -52,6 +86,8 @@ const analyzeLoanHandler = async (req, res) => {
       loanAmount,
       tenure,
       employment,
+      loanPurpose,
+      documentVerification: sanitizedDocuments,
     });
 
     // Merge AI insights with standard result
@@ -62,13 +98,16 @@ const analyzeLoanHandler = async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       try {
         const application = await LoanApplication.create({
+          ...finalResult,
           income,
           creditScore,
           existingEMI: existingEMI || 0,
           loanAmount,
           tenure,
           employment,
-          ...finalResult,
+          loanPurpose,
+          documentVerification: sanitizedDocuments,
+          status: finalResult.eligible ? 'Approved' : 'Rejected',
         });
         applicationId = application._id;
       } catch (dbErr) {
@@ -127,4 +166,53 @@ const getApplications = async (req, res) => {
   }
 };
 
-module.exports = { analyzeLoanHandler, updateStatus, getApplications };
+/**
+ * GET /api/admin/stats
+ * Aggregate user and application metrics for the admin panel.
+ */
+const getAdminStats = async (req, res) => {
+  try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({
+        totalUsers: 0,
+        totalApplications: 0,
+        approvedApplications: 0,
+        rejectedApplications: 0,
+        approvalRatio: 0,
+        pendingApplications: 0,
+      });
+    }
+
+    const [
+      totalUsers,
+      totalApplications,
+      approvedApplications,
+      rejectedApplications,
+      pendingApplications,
+    ] = await Promise.all([
+      User.countDocuments(),
+      LoanApplication.countDocuments(),
+      LoanApplication.countDocuments({ status: 'Approved' }),
+      LoanApplication.countDocuments({ status: 'Rejected' }),
+      LoanApplication.countDocuments({ status: { $in: ['Applied', 'Under Review'] } }),
+    ]);
+
+    const approvalRatio = totalApplications
+      ? Math.round((approvedApplications / totalApplications) * 100)
+      : 0;
+
+    return res.json({
+      totalUsers,
+      totalApplications,
+      approvedApplications,
+      rejectedApplications,
+      approvalRatio,
+      pendingApplications,
+    });
+  } catch (error) {
+    console.error('Admin stats error:', error);
+    return res.status(500).json({ error: 'Internal server error.' });
+  }
+};
+
+module.exports = { analyzeLoanHandler, updateStatus, getApplications, getAdminStats };

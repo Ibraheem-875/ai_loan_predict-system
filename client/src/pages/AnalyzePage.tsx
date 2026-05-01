@@ -9,11 +9,12 @@ import StatusTracker from '../components/StatusTracker';
 import ActionButtons from '../components/ActionButtons';
 import LoadingSkeleton from '../components/LoadingSkeleton';
 import AIInsights from '../components/AIInsights';
+import NotificationToast from '../components/NotificationToast';
 import { analyzeLoan as callAnalyze } from '../services/api';
 import { generatePDFReport } from '../utils/pdfGenerator';
 import type { LoanInput, LoanResult } from '../services/api';
 import { AlertTriangle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function AnalyzePage() {
   const [result, setResult] = useState<LoanResult | null>(null);
@@ -22,6 +23,7 @@ export default function AnalyzePage() {
   const [error, setError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
   const [aiEnabled, setAiEnabled] = useState(true);
+  const [notification, setNotification] = useState<{ message: string; tone: 'success' | 'info' } | null>(null);
   const resultRef = useRef<HTMLDivElement>(null);
 
   /** Submit the form and call the backend */
@@ -33,6 +35,10 @@ export default function AnalyzePage() {
     try {
       const res = await callAnalyze(data);
       setResult(res);
+      setNotification({
+        message: res.eligible ? 'Loan Approved Successfully' : 'Application Saved',
+        tone: res.eligible ? 'success' : 'info',
+      });
       setTimeout(() => resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 200);
     } catch (err: any) {
       setError(err?.response?.data?.error || 'Failed to analyze. Please try again.');
@@ -55,7 +61,10 @@ export default function AnalyzePage() {
     if (input && result) generatePDFReport(input, result);
   };
 
-  const handleApply = () => setApplied(true);
+  const handleApply = () => {
+    setApplied(true);
+    setNotification({ message: 'Application Saved', tone: 'success' });
+  };
 
   return (
     <motion.div 
@@ -64,6 +73,16 @@ export default function AnalyzePage() {
       exit={{ opacity: 0, y: -20 }}
       className="page-container"
     >
+      <AnimatePresence>
+        {notification && (
+          <NotificationToast
+            message={notification.message}
+            tone={notification.tone}
+            onClose={() => setNotification(null)}
+          />
+        )}
+      </AnimatePresence>
+
       <div style={{ textAlign: 'center', marginBottom: 48 }}>
         <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.5rem)', fontWeight: 900, marginBottom: 12 }}>
           Check <span className="gradient-text">Loan Eligibility</span>
