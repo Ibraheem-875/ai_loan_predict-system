@@ -13,6 +13,7 @@ const PORT = process.env.PORT || 5000;
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   'https://ai-loan-predict-system.vercel.app',
+  'https://ai-loan-predict-system.onrender.com',
 ].filter(Boolean);
 const localhostOriginPattern = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/;
 const corsOptions = {
@@ -44,11 +45,17 @@ app.use((req, res, next) => {
 });
 
 // --- Routes ---
+app.get('/', (_req, res) => res.json({ status: 'ok', message: 'AI Loan Predict API is running' }));
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/admin/auth', adminAuthRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', loanRoutes);
+
+// --- 404 handler ---
+app.use((_req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
 
 // --- Start server ---
 const start = async () => {
