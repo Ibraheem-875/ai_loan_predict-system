@@ -3,10 +3,45 @@ import { motion } from 'framer-motion';
 import {
   AlertTriangle, BarChart3, CheckCircle2, Clock3, RefreshCw, Users, XCircle,
   TrendingUp, Shield, PieChart, Activity, ArrowUpRight, Home, Car, GraduationCap, User,
-  FileCheck2, FileX2, Eye,
+  FileCheck2, FileX2, Eye, FileText,
 } from 'lucide-react';
-import { fetchAdminStats, fetchApplications, updateLoanStatus, type AdminStats, type LoanApplicationRecord } from '../services/api';
+import { fetchAdminStats, fetchApplications, updateLoanStatus, type AdminStats, type LoanApplicationRecord, type DocumentVerification } from '../services/api';
 import { PieChart as RPieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+
+const DOC_LABELS: Record<string, string> = { aadhaar: 'Aadhaar', pan: 'PAN', salarySlip: 'Salary' };
+const DOC_KEYS = ['aadhaar', 'pan', 'salarySlip'] as const;
+
+function DocBadges({ dv, compact = false }: { dv?: DocumentVerification; compact?: boolean }) {
+  return (
+    <div style={{ display: 'flex', gap: compact ? 4 : 6, flexWrap: 'wrap', alignItems: 'center' }}>
+      {DOC_KEYS.map(dk => {
+        const d = dv?.[dk];
+        const uploaded = d?.uploaded === true;
+        const hasUrl = uploaded && !!d?.url;
+        const label = DOC_LABELS[dk];
+        const color = uploaded ? '#10b981' : '#94a3b8';
+        const bg = uploaded ? 'rgba(16,185,129,0.1)' : 'rgba(148,163,184,0.08)';
+        const border = uploaded ? 'rgba(16,185,129,0.3)' : 'rgba(148,163,184,0.15)';
+        return (
+          <span key={dk} title={uploaded ? (d?.fileName || label) : `${label} not uploaded`}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: compact ? '2px 7px' : '3px 9px',
+              borderRadius: 6, fontSize: compact ? '0.68rem' : '0.72rem', fontWeight: 700,
+              color, background: bg, border: `1px solid ${border}`, whiteSpace: 'nowrap' }}>
+            {uploaded ? <FileCheck2 size={compact ? 10 : 11} /> : <FileX2 size={compact ? 10 : 11} />}
+            {label}
+            {hasUrl && (
+              <a href={d!.url} target="_blank" rel="noopener noreferrer"
+                onClick={e => e.stopPropagation()}
+                style={{ color: '#38bdf8', marginLeft: 2, lineHeight: 1, display: 'flex' }}>
+                <Eye size={compact ? 9 : 10} />
+              </a>
+            )}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 const emptyStats: AdminStats = {
   totalUsers: 0, totalApplications: 0, approvedApplications: 0,
@@ -183,53 +218,30 @@ export default function AdminPage() {
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border-glass)' }}>
-                    {['ID', 'Purpose', 'Amount', 'Score', 'Status', 'Date'].map(h => (
+                    {['ID', 'Purpose', 'Amount', 'Score', 'Status', 'Date', 'Documents'].map(h => (
                       <th key={h} style={{ padding: '12px 14px', textAlign: 'left', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                     ))}
-                    <th style={{ padding: '12px 14px', textAlign: 'right', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Documents</th>
                   </tr>
                 </thead>
                 <tbody>
                   {apps.slice(0, 8).map(app => (
                     <tr key={app._id} style={{ borderBottom: '1px solid rgba(148,163,184,0.06)' }}>
                       <td style={{ padding: '12px 14px', fontWeight: 700, fontFamily: 'monospace' }}>#{app._id.slice(-6).toUpperCase()}</td>
-                      <td style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 6, textTransform: 'capitalize' }}>
-                        {purposeIcons[app.loanPurpose]} {app.loanPurpose}
+                      <td style={{ padding: '12px 14px' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6, textTransform: 'capitalize' }}>
+                          {purposeIcons[app.loanPurpose]} {app.loanPurpose}
+                        </span>
                       </td>
                       <td style={{ padding: '12px 14px', fontWeight: 600 }}>₹{app.loanAmount.toLocaleString('en-IN')}</td>
                       <td style={{ padding: '12px 14px', fontWeight: 700 }}>{app.score}/100</td>
-                      <td style={{ padding: '12px 14px' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          {app.documentStatus?.complete ? <FileCheck2 size={14} color="#10b981" /> : <FileX2 size={14} color="#f59e0b" />}
-                          {app.documentStatus?.uploadedCount ?? 0}/{app.documentStatus?.requiredCount ?? 3}
-                        </span>
-                      </td>
                       <td style={{ padding: '12px 14px' }}>
                         <span style={{ fontSize: '0.78rem', fontWeight: 700, color: statusColors[app.status], background: `${statusColors[app.status]}18`, padding: '4px 10px', borderRadius: 99, border: `1px solid ${statusColors[app.status]}33` }}>
                           {app.status}
                         </span>
                       </td>
                       <td style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>{new Date(app.createdAt).toLocaleDateString()}</td>
-                      <td style={{ padding: '12px 14px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 6 }}>
-                          {(['aadhaar', 'pan', 'salarySlip'] as const).map(dk => {
-                            const d = app.documentVerification?.[dk];
-                            if (!d?.uploaded) return null;
-                            return (
-                              <a key={dk} href={d.url} target="_blank" rel="noopener noreferrer" 
-                                 title={`View ${dk}`}
-                                 style={{ 
-                                   width: 24, height: 24, borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                   background: 'rgba(59,130,246,0.1)', color: 'var(--accent-blue)', border: '1px solid rgba(59,130,246,0.2)' 
-                                 }}>
-                                <Eye size={12} />
-                              </a>
-                            );
-                          })}
-                          {(!app.documentVerification || !Object.values(app.documentVerification).some(d => d?.uploaded)) && (
-                            <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>None</span>
-                          )}
-                        </div>
+                      <td style={{ padding: '12px 14px' }}>
+                        <DocBadges dv={app.documentVerification} compact />
                       </td>
                     </tr>
                   ))}
@@ -271,21 +283,34 @@ export default function AdminPage() {
                 <MiniStat label="Risk" value={app.risk} />
                 <MiniStat label="Docs" value={`${app.documentStatus?.uploadedCount ?? 0}/${app.documentStatus?.requiredCount ?? 3}`} />
               </div>
-              {/* Show document URLs if available */}
-              {app.documentVerification && (
-                <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  {(['aadhaar', 'pan', 'salarySlip'] as const).map(dk => {
+              {/* Document verification section */}
+              <div style={{ marginTop: 16, padding: '14px 16px', borderRadius: 10, background: 'rgba(148,163,184,0.04)', border: '1px solid rgba(148,163,184,0.08)' }}>
+                <p style={{ margin: '0 0 10px', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <FileText size={12} /> Submitted Documents
+                </p>
+                <DocBadges dv={app.documentVerification} />
+                {/* File details */}
+                <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {DOC_KEYS.map(dk => {
                     const d = app.documentVerification?.[dk];
-                    if (!d?.uploaded) return null;
+                    if (!d?.uploaded || !d?.fileName) return null;
                     return (
-                      <span key={dk} style={{ fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', borderRadius: 8, background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', color: 'var(--accent-green)' }}>
-                        <FileCheck2 size={12} /> {dk}
-                        {d.url && <a href={d.url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ color: 'var(--accent-cyan)', marginLeft: 4 }}><Eye size={12} /></a>}
-                      </span>
+                      <div key={dk} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        <FileCheck2 size={11} color="#10b981" />
+                        <span style={{ fontWeight: 600 }}>{DOC_LABELS[dk]}:</span>
+                        <span style={{ color: 'var(--text-muted)' }}>{d.fileName}</span>
+                        {d.fileSize ? <span style={{ color: 'var(--text-muted)' }}>({(d.fileSize / 1024).toFixed(1)} KB)</span> : null}
+                        {d.url && (
+                          <a href={d.url} target="_blank" rel="noopener noreferrer"
+                            style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, color: '#38bdf8', fontWeight: 600 }}>
+                            <Eye size={11} /> View
+                          </a>
+                        )}
+                      </div>
                     );
                   })}
                 </div>
-              )}
+              </div>
             </div>
           ))}
           {apps.length === 0 && (
