@@ -11,6 +11,7 @@ The platform uses a decoupled architecture with a React frontend and a Node.js b
 Built with React and Vite, utilizing TypeScript for type safety.
 - **Routing & Navigation**: Uses standard routing for navigating between the `LandingPage`, `AnalyzePage`, and `HistoryPage`. The `Navbar` ensures quick access.
 - **Authentication Flow**: Users can sign up and log in via the `AuthPage`. Unauthenticated users are restricted from core features using a `ProtectedRoute` wrapper.
+- **Admin Authentication Flow**: Admins use a dedicated `AdminAuthPage` (`/admin/auth`) with separate sign-in/sign-up and token storage for the Admin Panel.
 - **State Management**: Uses React Context (`client/src/context/`) to globally manage authentication state (like the logged-in user and tokens).
 - **API Integration**: The `services/api.ts` handles API calls to the backend, keeping the component files clean and focused on UI logic.
 
@@ -18,6 +19,7 @@ Built with React and Vite, utilizing TypeScript for type safety.
 Built with Node.js and Express, backed by a MongoDB database.
 - **Controllers & Routes**: 
   - **Auth**: `authController.js` and `authRoutes.js` handle secure user registration and login, returning JSON Web Tokens (JWT).
+  - **Admin Auth**: `adminAuthController.js` and `adminAuthRoutes.js` provide dedicated admin registration/login and guard admin-only endpoints.
   - **Loan Handling**: `loanController.js` and `loanRoutes.js` process the financial data and simulate the AI-powered decision logic.
 - **Database Models (Mongoose)**:
   - `User.js`: Schema for storing user credentials.

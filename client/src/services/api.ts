@@ -2,9 +2,12 @@ import axios from 'axios';
 
 /** Axios instance with base URL pointing to our Express backend */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 
+           (window.location.hostname.includes('vercel.app') 
+             ? 'https://ai-loan-predict-system.onrender.com/api' 
+             : '/api'),
   headers: { 'Content-Type': 'application/json' },
-  timeout: 45000, // 45 seconds to accommodate Gemini API latency (was 10 seconds)
+  timeout: 60000, // 60 seconds to accommodate Gemini and large file uploads
 });
 
 const TOKEN_KEY = 'fincore_auth_token';
