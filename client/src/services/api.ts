@@ -1,13 +1,16 @@
 import axios from 'axios';
 
 /** Axios instance with base URL pointing to our Express backend */
+/** Axios instance with base URL pointing to our Express backend */
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 
-           (window.location.hostname.includes('vercel.app') 
-             ? 'https://ai-loan-predict-system.onrender.com/api' 
-             : '/api'),
+  // Use VITE_API_BASE_URL if it's a full URL, otherwise force Render URL in production
+  baseURL: (import.meta.env.VITE_API_BASE_URL && import.meta.env.VITE_API_BASE_URL.startsWith('http'))
+    ? import.meta.env.VITE_API_BASE_URL
+    : (window.location.hostname.includes('vercel.app') 
+        ? 'https://ai-loan-predict-system.onrender.com/api' 
+        : '/api'),
   headers: { 'Content-Type': 'application/json' },
-  timeout: 60000, // 60 seconds to accommodate Gemini and large file uploads
+  timeout: 60000,
 });
 
 const TOKEN_KEY = 'fincore_auth_token';
