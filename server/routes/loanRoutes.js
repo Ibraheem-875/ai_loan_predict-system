@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { analyzeLoanHandler, updateStatus, getApplications, getAdminStats } = require('../controllers/loanController');
+const { protectAdmin } = require('../middleware/adminAuthMiddleware');
 
 // POST  /api/analyze-loan  — Run full analysis
 router.post('/analyze-loan', analyzeLoanHandler);
@@ -12,6 +13,6 @@ router.patch('/loan-status/:id', updateStatus);
 router.get('/applications', getApplications);
 
 // GET /api/admin/stats — Fetch dashboard metrics
-router.get('/admin/stats', getAdminStats);
+router.get('/admin/stats', protectAdmin, getAdminStats);
 
 module.exports = router;

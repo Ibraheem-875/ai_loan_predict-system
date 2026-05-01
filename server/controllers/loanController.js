@@ -15,6 +15,8 @@ const sanitizeDocumentVerification = (documentVerification = {}) => {
       fileName: typeof doc.fileName === 'string' ? doc.fileName.slice(0, 180) : '',
       fileType: typeof doc.fileType === 'string' ? doc.fileType.slice(0, 80) : '',
       fileSize: typeof doc.fileSize === 'number' ? doc.fileSize : 0,
+      url: typeof doc.url === 'string' ? doc.url.slice(0, 500) : '',
+      publicId: typeof doc.publicId === 'string' ? doc.publicId.slice(0, 200) : '',
     };
     return acc;
   }, {});

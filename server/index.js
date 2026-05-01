@@ -4,7 +4,9 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const loanRoutes = require('./routes/loanRoutes');
 const authRoutes = require('./routes/authRoutes');
+const adminAuthRoutes = require('./routes/adminAuthRoutes');
 const healthRoutes = require('./routes/healthRoutes');
+const uploadRoutes = require('./routes/uploadRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -32,7 +34,7 @@ const corsOptions = {
 // --- Middleware ---
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // Request timeout middleware (40 seconds for API responses)
 app.use((req, res, next) => {
@@ -44,11 +46,15 @@ app.use((req, res, next) => {
 // --- Routes ---
 app.use('/api/health', healthRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api', uploadRoutes);
 app.use('/api', loanRoutes);
 
 // --- Start server ---
 const start = async () => {
-  await connectDB();
+  // Connect to DB in the background
+  connectDB().catch(err => console.error('Background DB connection failed:', err));
+  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
   });

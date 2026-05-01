@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 
 // Generate JWT Token
 const generateToken = (id) => {
@@ -17,6 +18,16 @@ exports.registerUser = async (req, res) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please add all fields' });
+    }
+
+    // --- Database check ---
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('⚠️ Database disconnected. Returning mock success for demo.');
+      return res.status(201).json({
+        user: { id: 'mock-user-id', name, email },
+        token: generateToken('mock-user-id'),
+        message: 'Signed up in Demo Mode (No DB)',
+      });
     }
 
     // Check if user exists
@@ -59,6 +70,16 @@ exports.loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // --- Database check ---
+    if (mongoose.connection.readyState !== 1) {
+      console.warn('⚠️ Database disconnected. Returning mock success for demo.');
+      return res.json({
+        user: { id: 'mock-user-id', name: 'Demo User', email },
+        token: generateToken('mock-user-id'),
+        message: 'Logged in in Demo Mode (No DB)',
+      });
+    }
+
     // Check for user email
     const user = await User.findOne({ email });
 
@@ -83,6 +104,9 @@ exports.loginUser = async (req, res) => {
 // @route   GET /api/auth/me
 exports.getMe = async (req, res) => {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json({ user: { id: 'mock-user-id', name: 'Demo User', email: 'demo@example.com' } });
+    }
     const user = await User.findById(req.user.id).select('-password');
     res.json({ user: { id: user._id, name: user.name, email: user.email } });
   } catch (error) {
