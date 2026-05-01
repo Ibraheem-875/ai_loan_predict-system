@@ -98,6 +98,7 @@ const analyzeLoanHandler = async (req, res) => {
     if (mongoose.connection.readyState === 1) {
       try {
         const application = await LoanApplication.create({
+          ...finalResult,
           income,
           creditScore,
           existingEMI: existingEMI || 0,
@@ -106,7 +107,6 @@ const analyzeLoanHandler = async (req, res) => {
           employment,
           loanPurpose,
           documentVerification: sanitizedDocuments,
-          ...finalResult,
           status: finalResult.eligible ? 'Approved' : 'Rejected',
         });
         applicationId = application._id;
