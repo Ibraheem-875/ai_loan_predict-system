@@ -3,6 +3,7 @@ import Navbar from './components/Navbar';
 import LandingPage from './pages/LandingPage';
 import AnalyzePage from './pages/AnalyzePage';
 import HistoryPage from './pages/HistoryPage';
+import AdminPage from './pages/AdminPage';
 import AuthPage from './pages/AuthPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AnimatePresence } from 'framer-motion';
@@ -31,6 +32,14 @@ export default function App() {
                 element={(
                   <ProtectedRoute>
                     <HistoryPage />
+                  </ProtectedRoute>
+                )}
+              />
+              <Route
+                path="/admin"
+                element={(
+                  <ProtectedRoute>
+                    <AdminPage />
                   </ProtectedRoute>
                 )}
               />

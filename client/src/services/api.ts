@@ -37,6 +37,8 @@ export interface LoanApplicationRecord extends LoanResult {
   loanAmount: number;
   tenure: number;
   employment: 'stable' | 'unstable';
+  loanPurpose: LoanPurpose;
+  documentVerification: DocumentVerification;
   status: 'Applied' | 'Under Review' | 'Approved' | 'Rejected';
   createdAt: string;
 }
@@ -53,6 +55,21 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+export type LoanPurpose = 'home' | 'car' | 'personal' | 'education';
+
+export interface UploadedDocument {
+  uploaded: boolean;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+}
+
+export interface DocumentVerification {
+  aadhaar?: UploadedDocument;
+  pan?: UploadedDocument;
+  salarySlip?: UploadedDocument;
+}
+
 /** Shape of the loan analysis request body */
 export interface LoanInput {
   income: number;
@@ -61,6 +78,8 @@ export interface LoanInput {
   loanAmount: number;
   tenure: number;
   employment: 'stable' | 'unstable';
+  loanPurpose: LoanPurpose;
+  documentVerification: DocumentVerification;
 }
 
 /** Shape of the analysis response */
@@ -75,6 +94,20 @@ export interface LoanResult {
   totalPayable: number;
   reasons: string[];
   suggestions: string[];
+  loanPurpose: LoanPurpose;
+  documentStatus?: {
+    uploadedCount: number;
+    requiredCount: number;
+    complete: boolean;
+  };
+  purposeAnalysis?: {
+    type: string;
+    minimumCreditScore: number;
+    maxTenure: number;
+    maxEmiRatio: number;
+    note: string;
+    purposeEligible: boolean;
+  };
   ai?: {
     summary: string;
     explanation: string;
@@ -122,6 +155,20 @@ export const updateLoanStatus = async (
 
 export const fetchApplications = async (): Promise<{ applications: LoanApplicationRecord[] }> => {
   const response = await api.get<{ applications: LoanApplicationRecord[] }>('/applications');
+  return response.data;
+};
+
+export interface AdminStats {
+  totalUsers: number;
+  totalApplications: number;
+  approvedApplications: number;
+  rejectedApplications: number;
+  approvalRatio: number;
+  pendingApplications: number;
+}
+
+export const fetchAdminStats = async (): Promise<AdminStats> => {
+  const response = await api.get<AdminStats>('/admin/stats');
   return response.data;
 };
 

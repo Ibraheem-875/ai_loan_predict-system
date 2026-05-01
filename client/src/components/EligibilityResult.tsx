@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, TrendingUp } from 'lucide-react';
+import { CheckCircle2, XCircle, TrendingUp, FileCheck2, Building2 } from 'lucide-react';
 import type { LoanResult } from '../services/api';
 
 interface Props {
@@ -151,6 +151,27 @@ export default function EligibilityResult({ result }: Props) {
         >
           Score: <strong style={{ color: 'var(--text-primary)' }}>{score}</strong> / 100
         </p>
+      </div>
+
+      <div style={{ marginTop: 18, display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+        {result.purposeAnalysis && (
+          <div style={{ padding: 12, border: '1px solid var(--border-glass)', borderRadius: 12, background: 'rgba(255,255,255,0.03)' }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+              <Building2 size={14} /> Loan Purpose
+            </p>
+            <p style={{ margin: '4px 0 0', fontWeight: 800 }}>{result.purposeAnalysis.type}</p>
+          </div>
+        )}
+        {result.documentStatus && (
+          <div style={{ padding: 12, border: '1px solid var(--border-glass)', borderRadius: 12, background: 'rgba(255,255,255,0.03)' }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, color: 'var(--text-muted)', fontSize: '0.78rem', margin: 0 }}>
+              <FileCheck2 size={14} /> Document Verification
+            </p>
+            <p style={{ margin: '4px 0 0', fontWeight: 800 }}>
+              {result.documentStatus.uploadedCount}/{result.documentStatus.requiredCount} Uploaded
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

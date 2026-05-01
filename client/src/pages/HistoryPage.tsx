@@ -135,6 +135,11 @@ export default function HistoryPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
               <DataPoint label="Created" value={new Date(application.createdAt).toLocaleString()} />
               <DataPoint label="Loan Amount" value={`₹${application.loanAmount.toLocaleString('en-IN')}`} />
+              <DataPoint label="Purpose" value={application.purposeAnalysis?.type || application.loanPurpose} />
+              <DataPoint
+                label="Documents"
+                value={`${application.documentStatus?.uploadedCount ?? 0}/${application.documentStatus?.requiredCount ?? 3} uploaded`}
+              />
               <DataPoint label="Income" value={`₹${application.income.toLocaleString('en-IN')}`} />
               <DataPoint label="Credit Score" value={application.creditScore.toString()} />
               <DataPoint label="Probability" value={`${application.probability}%`} />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sun, Moon, Shield, Home, Activity, Clock, LogIn, LogOut } from 'lucide-react';
+import { Sun, Moon, Shield, Home, Activity, Clock, LogIn, LogOut, LayoutDashboard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
@@ -20,6 +20,7 @@ export default function Navbar() {
       ? [
           { name: 'Analyze', path: '/analyze', icon: <Activity size={16} /> },
           { name: 'History', path: '/history', icon: <Clock size={16} /> },
+          { name: 'Admin', path: '/admin', icon: <LayoutDashboard size={16} /> },
         ]
       : []),
   ];
