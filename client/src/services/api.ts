@@ -202,11 +202,6 @@ export const fetchMe = async (): Promise<{ user: AuthUser }> => {
   return response.data;
 };
 
-export const registerAdmin = async (data: RegisterPayload): Promise<AdminAuthResponse> => {
-  const response = await api.post<AdminAuthResponse>('/admin/auth/register', data);
-  return response.data;
-};
-
 export const loginAdmin = async (data: AuthPayload): Promise<AdminAuthResponse> => {
   const response = await api.post<AdminAuthResponse>('/admin/auth/login', data);
   return response.data;

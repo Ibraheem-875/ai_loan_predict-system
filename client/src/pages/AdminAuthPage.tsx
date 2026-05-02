@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { motion } from 'framer-motion';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { AlertTriangle, LogIn, UserPlus } from 'lucide-react';
+import { AlertTriangle, LogIn } from 'lucide-react';
 import { useAdminAuth } from '../context/AdminAuthContext';
 
-type Mode = 'login' | 'register';
-
 export default function AdminAuthPage() {
-  const { loginAdminUser, registerAdminUser, isAdminAuthenticated } = useAdminAuth();
+  const { loginAdminUser, isAdminAuthenticated } = useAdminAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [mode, setMode] = useState<Mode>('login');
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,11 +29,7 @@ export default function AdminAuthPage() {
     setError(null);
     setLoading(true);
     try {
-      if (mode === 'register') {
-        await registerAdminUser({ name: name.trim(), email: email.trim(), password });
-      } else {
-        await loginAdminUser({ email: email.trim(), password });
-      }
+      await loginAdminUser({ email: email.trim(), password });
       navigate(redirectPath, { replace: true });
     } catch (err: unknown) {
       const errorResponse = err as { response?: { data?: { message?: string; error?: string } } };
@@ -58,42 +50,20 @@ export default function AdminAuthPage() {
       <div className="glass-card" style={{ width: '100%', maxWidth: 520, padding: 32 }}>
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 900 }}>
-            {mode === 'login' ? 'Admin Login' : 'Create Admin'} <span className="gradient-text">Account</span>
+            Admin Login <span className="gradient-text">Account</span>
           </h1>
           <p style={{ color: 'var(--text-muted)', marginTop: 8 }}>
-            {mode === 'login' ? 'Sign in to access admin metrics and controls.' : 'Create a dedicated admin account.'}
+            Sign in to access admin metrics and controls.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
-          <button
-            type="button"
-            className={mode === 'login' ? 'btn-primary' : 'btn-secondary'}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-            onClick={() => setMode('login')}
-          >
+        <div style={{ marginBottom: 20 }}>
+          <button type="button" className="btn-primary" style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
             <LogIn size={16} /> Sign In
-          </button>
-          <button
-            type="button"
-            className={mode === 'register' ? 'btn-primary' : 'btn-secondary'}
-            style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}
-            onClick={() => setMode('register')}
-          >
-            <UserPlus size={16} /> Sign Up
           </button>
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {mode === 'register' && (
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Admin full name"
-              required
-              style={inputStyle}
-            />
-          )}
           <input
             type="email"
             value={email}
@@ -120,7 +90,7 @@ export default function AdminAuthPage() {
           )}
 
           <button disabled={loading} type="submit" className="btn-primary" style={{ marginTop: 8 }}>
-            {loading ? 'Please wait...' : mode === 'login' ? 'Sign In as Admin' : 'Create Admin Account'}
+            {loading ? 'Please wait...' : 'Sign In as Admin'}
           </button>
         </form>
       </div>

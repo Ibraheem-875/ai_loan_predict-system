@@ -4,11 +4,9 @@ import {
   fetchAdminMe,
   getStoredAdminToken,
   loginAdmin,
-  registerAdmin,
   setStoredAdminToken,
   type AuthPayload,
   type AuthUser,
-  type RegisterPayload,
 } from '../services/api';
 
 interface AdminAuthContextType {
@@ -16,7 +14,6 @@ interface AdminAuthContextType {
   isAdminAuthenticated: boolean;
   adminAuthLoading: boolean;
   loginAdminUser: (payload: AuthPayload) => Promise<void>;
-  registerAdminUser: (payload: RegisterPayload) => Promise<void>;
   logoutAdmin: () => void;
 }
 
@@ -54,12 +51,6 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
     setAdmin(response.admin);
   };
 
-  const registerAdminUser = async (payload: RegisterPayload) => {
-    const response = await registerAdmin(payload);
-    setStoredAdminToken(response.token);
-    setAdmin(response.admin);
-  };
-
   const logoutAdmin = () => {
     clearStoredAdminToken();
     setAdmin(null);
@@ -71,7 +62,6 @@ export function AdminAuthProvider({ children }: { children: React.ReactNode }) {
       isAdminAuthenticated: Boolean(admin),
       adminAuthLoading,
       loginAdminUser,
-      registerAdminUser,
       logoutAdmin,
     }),
     [admin, adminAuthLoading]
